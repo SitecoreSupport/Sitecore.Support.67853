@@ -8,4 +8,3 @@
 <asp:Panel ID="fieldContainer" runat="server"/>
 <wfm:FormFooter ID="footer" runat="server"/>
 <wfm:FormSubmit ID="submit" runat="server" Class="scfSubmitButtonBorder"/>
- 

@@ -9,60 +9,58 @@ using Sitecore.Diagnostics;
 using Sitecore.Eventing;
 using Sitecore.Form.Core;
 using Sitecore.Form.Core.Configuration;
-using Sitecore.Form.Core.Controls.Data;
 using Sitecore.Form.Core.Data;
-using Sitecore.Form.Core.Media;
 using Sitecore.Form.Core.Pipelines.FormSubmit;
-using Sitecore.Form.Core.Submit;
 using Sitecore.Pipelines;
 using Sitecore.Sites;
 using Sitecore.Support.Form.Core.Submit;
 using Sitecore.Web;
-using Sitecore.WFFM.Analytics;
+using Sitecore.WFFM.Abstractions;
+using Sitecore.WFFM.Abstractions.Actions;
 using Settings = Sitecore.Configuration.Settings;
-using SubmitActionManager = Sitecore.Support.Form.Core.Submit.SubmitActionManager;
 
 namespace Sitecore.Support.Form.Core
 {
   public class FormDataHandler
   {
-    public static long PostedFilesLimit => StringUtil.ParseSizeString(Settings.GetSetting("WFM.PostedFilesLimit", "1024KB"));
+    public static long PostedFilesLimit =>
+      StringUtil.ParseSizeString(Settings.GetSetting("WFM.PostedFilesLimit", "1024KB"));
 
-    private static void ExecuteSaveActions(ID formId, ControlResult[] fields, ActionDefinition[] actions)
+    private static void ExecuteSaveActions(ID formId, ControlResult[] fields, IActionDefinition[] actions, IActionExecutor actionExecutor)
     {
-      if (((Context.Site.DisplayMode != DisplayMode.Normal) && (Context.Site.DisplayMode != DisplayMode.Preview)) ||
-          (WebUtil.GetQueryString("sc_debug", null) != null)) return;
-
+      if (((Context.Site.DisplayMode != DisplayMode.Normal) && (Context.Site.DisplayMode != DisplayMode.Preview)) || (WebUtil.GetQueryString("sc_debug", null) != null)) return;
       if (Sitecore.Form.Core.Configuration.Settings.IsRemoteActions)
       {
-        var event2 = new WffmActionEvent
+        var event3 = new WffmActionEvent
         {
           FormID = formId,
-          SessionIDGuid = AnalyticsTracker.SessionId.Guid,
-          Actions = actions.Where(delegate(ActionDefinition s)
+          SessionIDGuid = DependenciesManager.AnalyticsTracker.SessionId.Guid,
+
+          Actions = actions.Where(delegate (IActionDefinition s)
           {
             var item = StaticSettings.ContextDatabase.GetItem(s.ActionID);
-            return (item != null) && !new ActionItem(item).IsClientAction;
+            return (item != null) && !DependenciesManager.ItemRepository.CreateAction(item).IsClientAction;
           }).ToArray(),
+
           Fields = GetSerializableControlResults(fields).ToArray(),
           UserName = Sitecore.Form.Core.Configuration.Settings.RemoteActionsUserName,
           Password = Sitecore.Form.Core.Configuration.Settings.RemoteActionsUserPassword
         };
 
-        EventManager.QueueEvent(event2);
+        EventManager.QueueEvent(event3);
 
-        var result = SubmitActionManager.ExecuteSaving(formId, fields, actions.Where(delegate(ActionDefinition s)
+        var result = actionExecutor.ExecuteSaving(formId, fields, actions.Where(delegate (IActionDefinition s)
         {
-          var item = StaticSettings.ContextDatabase.GetItem(s.ActionID);
-          return (item != null) && new ActionItem(item).IsClientAction;
-        }).ToArray(), true, AnalyticsTracker.SessionId);
+          var item = DependenciesManager.ItemRepository.CreateAction(s.ActionID);
+          return (item != null) && item.IsClientAction;
+        }).ToArray(), true, DependenciesManager.AnalyticsTracker.SessionId);
 
         if (result.Failures.Length > 0) FormContext.Failures.AddRange(result.Failures);
       }
       else
       {
-        var result2 = SubmitActionManager.ExecuteSaving(formId, fields, actions, false, AnalyticsTracker.SessionId);
-        if (result2.Failures.Length > 0)FormContext.Failures.AddRange(result2.Failures);
+        var result2 = actionExecutor.ExecuteSaving(formId, fields, actions, false, DependenciesManager.AnalyticsTracker.SessionId);
+        if (result2.Failures.Length > 0) FormContext.Failures.AddRange(result2.Failures);
       }
     }
 
@@ -70,19 +68,15 @@ namespace Sitecore.Support.Form.Core
     {
       var controlResults = fields as ControlResult[] ?? fields.ToArray();
       Assert.ArgumentCondition(GetUploadedSizeOfAllFiles(controlResults) < PostedFilesLimit, "Posted files size", "Posted files size exceeds limit");
-
-      return controlResults.Select(delegate(ControlResult f)
-      {
-        var result = new ControlResult
-        {
-          FieldID = f.FieldID,
-          FieldName = f.FieldName,
-          Value = GetSerializedValue(f.Value),
-          FieldType = f.Value?.GetType().ToString() ?? typeof(object).ToString(),
-          Parameters = f.Parameters
-        };
-        return result;
-      });
+      return from f in controlResults
+             select new ControlResult
+             {
+               FieldID = f.FieldID,
+               FieldName = f.FieldName,
+               Value = GetSerializedValue(f.Value),
+               FieldType = f.Value?.GetType().ToString() ?? typeof(object).ToString(),
+               Parameters = f.Parameters
+             };
     }
 
     private static object GetSerializedValue(object value)
@@ -104,7 +98,7 @@ namespace Sitecore.Support.Form.Core
 
       using (TextWriter writer = new StringWriter(sb))
       {
-        if (value != null) new XmlSerializer(value.GetType()).Serialize(writer, value);
+        new XmlSerializer(value?.GetType() ?? typeof(object)).Serialize(writer, value);
         value = sb.ToString();
       }
       return value;
@@ -115,7 +109,8 @@ namespace Sitecore.Support.Form.Core
       return fields.Select(result => result.Value as PostedFile).Where(file => file?.Data != null).Aggregate(0L, (current, file) => current + file.Data.Length);
     }
 
-    public static void ProcessData(ID formID, ControlResult[] fields, ActionDefinition[] actions)
+    public static void ProcessData(ID formID, ControlResult[] fields, IActionDefinition[] actions,
+      IActionExecutor actionExecutor)
     {
       Assert.ArgumentNotNull(formID, "formID");
       Assert.ArgumentNotNull(fields, "fields");
@@ -123,16 +118,16 @@ namespace Sitecore.Support.Form.Core
       FormContext.Failures = new List<ExecuteResult.Failure>();
 
       if (ID.IsNullOrEmpty(formID)) return;
-      SubmitActionManager.ExecuteChecking(formID, fields, actions);
+      actionExecutor.ExecuteChecking(formID, fields, actions);
 
       try
       {
-        ExecuteSaveActions(formID, fields, actions);
-        SubmitActionManager.ExecuteSystemAction(formID, fields);
+        ExecuteSaveActions(formID, fields, actions, actionExecutor);
+        actionExecutor.ExecuteSystemAction(formID, fields);
       }
       catch (Exception exception)
       {
-        Log.Warn(exception.Message, exception, new object());
+        DependenciesManager.Logger.Warn(exception.Message, exception, new object());
 
         var item = new ExecuteResult.Failure
         {
@@ -146,20 +141,20 @@ namespace Sitecore.Support.Form.Core
 
       if (FormContext.Failures.Count <= 0) return;
 
-      var args2 = new SubmittedFormFailuresArgs(formID, FormContext.Failures)
+      var args = new SubmittedFormFailuresArgs(formID, FormContext.Failures)
       {
         Database = StaticSettings.ContextDatabase.Name
       };
+
       try
       {
-        CorePipeline.Run("errorSubmit", args2);
+        CorePipeline.Run("errorSubmit", args);
       }
       catch
       {
         // ignored
       }
-
-      throw new FormSubmitException(args2.Failures);
+      throw new FormSubmitException(args.Failures);
     }
   }
 }

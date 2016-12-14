@@ -40,37 +40,28 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Sitecore.Abstractions, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SC.Sitecore.Abstractions.8.0.4\lib\Sitecore.Abstractions.dll</HintPath>
+    <Reference Include="HtmlAgilityPack, Version=1.4.6.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>..\packages\SC.HtmlAgilityPack.8.1.2\lib\HtmlAgilityPack.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Sitecore.Analytics, Version=8.0.5193.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SC.Sitecore.Analytics.8.0.4\lib\Sitecore.Analytics.dll</HintPath>
+    <Reference Include="Sitecore.Analytics.Model, Version=8.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SC.Sitecore.Analytics.Model.8.1.2\lib\Sitecore.Analytics.Model.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Sitecore.Analytics.Model, Version=8.0.5193.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SC.Sitecore.Analytics.Model.8.0.4\lib\Sitecore.Analytics.Model.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Sitecore.Forms.Core">
+    <Reference Include="Sitecore.Forms.Core, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\Sitecore.Forms.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Sitecore.Forms.Mvc">
+    <Reference Include="Sitecore.Forms.Mvc, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\lib\Sitecore.Forms.Mvc.dll</HintPath>
     </Reference>
-    <Reference Include="Sitecore.Kernel, Version=8.0.5193.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SC.Sitecore.Kernel.8.0.4\lib\Sitecore.Kernel.dll</HintPath>
+    <Reference Include="Sitecore.Kernel, Version=8.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SC.Sitecore.Kernel.8.1.2\lib\Sitecore.Kernel.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Sitecore.Mvc, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\SC.Sitecore.Mvc.8.0.4\lib\Sitecore.Mvc.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Sitecore.WFFM">
-      <HintPath>..\lib\Sitecore.WFFM.dll</HintPath>
-    </Reference>
-    <Reference Include="Sitecore.WFFM.Analytics">
-      <HintPath>..\lib\Sitecore.WFFM.Analytics.dll</HintPath>
+    <Reference Include="Sitecore.WFFM.Abstractions">
+      <HintPath>..\lib\Sitecore.WFFM.Abstractions.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
@@ -80,10 +71,9 @@
     <Reference Include="System.Configuration" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Forms\Mvc\Processors\SitecoreFormProcessor.cs" />
+    <Compile Include="Forms\Mvc\Pipelines\ExecuteSaveActions\SaveDataAndExecuteSaveActions.cs" />
     <Compile Include="Form\Core\FormDataHandler.cs" />
     <Compile Include="Form\Core\Submit\FormContext.cs" />
-    <Compile Include="Form\Core\Submit\SubmitActionManager.cs" />
     <Compile Include="Form\Web\UI\Controls\SitecoreSimpleFormAscx.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
@@ -95,7 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Properties\PublishProfiles\wffm80u4.pubxml" />
+    <None Include="Properties\PublishProfiles\sc81u1wffmu1.pubxml" />
     <None Include="web.config" />
   </ItemGroup>
   <ItemGroup />
