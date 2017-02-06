@@ -53,12 +53,12 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Sitecore.Forms.Core, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Sitecore.Forms.Core.dll</HintPath>
+      <HintPath>..\packages\WFFM.Sitecore.Forms.Core.8.0.6\lib\Sitecore.Forms.Core.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Sitecore.Forms.Mvc, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Sitecore.Forms.Mvc.dll</HintPath>
+      <HintPath>..\packages\WFFM.Sitecore.Forms.Mvc.8.0.6\lib\Sitecore.Forms.Mvc.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Sitecore.Kernel, Version=8.0.5352.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SC.Sitecore.Kernel.8.0.0.151127\lib\Sitecore.Kernel.dll</HintPath>
@@ -69,12 +69,12 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Sitecore.WFFM, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Sitecore.WFFM.dll</HintPath>
+      <HintPath>..\packages\WFFM.Sitecore.WFFM.8.0.6\lib\Sitecore.WFFM.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Sitecore.WFFM.Analytics, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\Sitecore.WFFM.Analytics.dll</HintPath>
+      <HintPath>..\packages\WFFM.Sitecore.WFFM.Analytics.8.0.6\lib\Sitecore.WFFM.Analytics.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
