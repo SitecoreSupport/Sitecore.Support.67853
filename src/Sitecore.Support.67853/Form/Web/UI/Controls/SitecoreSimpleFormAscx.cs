@@ -130,7 +130,7 @@ namespace Sitecore.Support.Form.Web.UI.Controls
           }
           else
           {
-            var control2 = FindControl(BaseID + prefixErrorID);
+            var control2 = FindControl(BaseID + PrefixErrorID);
             if (control2 != null)
               SetFocus(control2.ClientID, null);
           }
