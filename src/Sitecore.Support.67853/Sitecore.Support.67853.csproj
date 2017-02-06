@@ -92,7 +92,6 @@
     <Content Include="sitecore modules\Web\Web Forms for Marketers\control\SitecoreSimpleFormAscx.ascx" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="Properties\PublishProfiles\wffm80u4.pubxml" />
     <None Include="web.config" />
   </ItemGroup>

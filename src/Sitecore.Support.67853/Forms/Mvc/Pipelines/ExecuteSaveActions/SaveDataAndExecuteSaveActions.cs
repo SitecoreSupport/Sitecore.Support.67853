@@ -1,5 +1,4 @@
 ﻿using Sitecore.Diagnostics;
-using Sitecore.Form.Core;
 using Sitecore.Form.Core.ContentEditor.Data;
 using Sitecore.Form.Core.Data;
 using Sitecore.Form.Core.Submit;
