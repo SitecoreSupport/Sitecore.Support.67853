@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Sitecore.Form.Core.Submit;
+using Sitecore.WFFM.Abstractions.Actions;
 
 namespace Sitecore.Support.Form.Core.Submit
 {

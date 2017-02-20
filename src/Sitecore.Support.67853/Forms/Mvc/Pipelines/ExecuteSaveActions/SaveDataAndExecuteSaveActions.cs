@@ -1,23 +1,35 @@
-﻿using Sitecore.Diagnostics;
-using Sitecore.Form.Core.ContentEditor.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Sitecore.Diagnostics;
 using Sitecore.Form.Core.Data;
-using Sitecore.Form.Core.Submit;
 using Sitecore.Forms.Mvc.Interfaces;
 using Sitecore.Forms.Mvc.Models;
 using Sitecore.Forms.Mvc.Pipelines;
-using Sitecore.WFFM.Analytics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Sitecore.Support.Form.Core;
+using Sitecore.WFFM.Abstractions.Actions;
+using Sitecore.WFFM.Abstractions.ContentEditor;
+using Sitecore.WFFM.Abstractions.Shared;
 
 namespace Sitecore.Support.Forms.Mvc.Pipelines.ExecuteSaveActions
 {
     public class SaveDataAndExecuteSaveActions : FormProcessorBase<IFormModel>
     {
-        private ActionDefinition[] GetActions(ListDefinition definition)
+        private readonly IActionExecutor actionExecutor;
+        private readonly IAnalyticsTracker analyticsTracker;
+
+        public SaveDataAndExecuteSaveActions(IActionExecutor actionExecutor, IAnalyticsTracker analyticsTracker)
+        {
+            Assert.ArgumentNotNull(actionExecutor, "actionExecutor");
+            Assert.IsNotNull(analyticsTracker, "analyticsTracker");
+            this.actionExecutor = actionExecutor;
+            this.analyticsTracker = analyticsTracker;
+        }
+
+        private IActionDefinition[] GetActions(IListDefinition definition)
         {
             Assert.ArgumentNotNull(definition, "definition");
-            var list = new List<ActionDefinition>();
+            var list = new List<IActionDefinition>();
             if (!definition.Groups.Any()) return list.ToArray();
 
             foreach (var definition2 in definition.Groups)
@@ -35,8 +47,8 @@ namespace Sitecore.Support.Forms.Mvc.Pipelines.ExecuteSaveActions
 
             try
             {
-                Sitecore.Support.Form.Core.FormDataHandler.ProcessData(((FormModel)model).Item.ID, model.Results.ToArray(),
-                  GetActions(model.Item.ActionsDefinition));
+                FormDataHandler.ProcessData(((FormModel)model).Item.ID, model.Results.ToArray(),
+                  GetActions(model.Item.ActionsDefinition), actionExecutor);
             }
             catch (FormSubmitException exception)
             {
@@ -49,7 +61,8 @@ namespace Sitecore.Support.Forms.Mvc.Pipelines.ExecuteSaveActions
                     var item = new ExecuteResult.Failure
                     {
                         ErrorMessage = exception2.Message,
-                        StackTrace = exception2.StackTrace
+                        StackTrace = exception2.StackTrace,
+                        IsMessageUnchangeable = exception2.Source.Equals(WFFM.Abstractions.Constants.Core.Constants.CheckActions)
                     };
                     model.Failures.Add(item);
                 }
@@ -58,7 +71,7 @@ namespace Sitecore.Support.Forms.Mvc.Pipelines.ExecuteSaveActions
                     Log.Error(exception3.Message, exception3, this);
                 }
             }
-            model.EventCounter = AnalyticsTracker.EventCounter + 1;
+            model.EventCounter = analyticsTracker.EventCounter + 1;
         }
     }
 }

@@ -9,157 +9,154 @@ using Sitecore.Diagnostics;
 using Sitecore.Eventing;
 using Sitecore.Form.Core;
 using Sitecore.Form.Core.Configuration;
-using Sitecore.Form.Core.Controls.Data;
 using Sitecore.Form.Core.Data;
-using Sitecore.Form.Core.Media;
 using Sitecore.Form.Core.Pipelines.FormSubmit;
-using Sitecore.Form.Core.Submit;
 using Sitecore.Pipelines;
 using Sitecore.Sites;
 using Sitecore.Support.Form.Core.Submit;
 using Sitecore.Web;
-using Sitecore.WFFM.Analytics;
+using Sitecore.WFFM.Abstractions;
+using Sitecore.WFFM.Abstractions.Actions;
 using Settings = Sitecore.Configuration.Settings;
-using SubmitActionManager = Sitecore.Support.Form.Core.Submit.SubmitActionManager;
 
 namespace Sitecore.Support.Form.Core
 {
-  public class FormDataHandler
-  {
-    public static long PostedFilesLimit => StringUtil.ParseSizeString(Settings.GetSetting("WFM.PostedFilesLimit", "1024KB"));
-
-    private static void ExecuteSaveActions(ID formId, ControlResult[] fields, ActionDefinition[] actions)
+    public class FormDataHandler
     {
-      if (((Context.Site.DisplayMode != DisplayMode.Normal) && (Context.Site.DisplayMode != DisplayMode.Preview)) ||
-          (WebUtil.GetQueryString("sc_debug", null) != null)) return;
+        public static long PostedFilesLimit =>
+          StringUtil.ParseSizeString(Settings.GetSetting("WFM.PostedFilesLimit", "1024KB"));
 
-      if (Sitecore.Form.Core.Configuration.Settings.IsRemoteActions)
-      {
-        var event2 = new WffmActionEvent
+        private static void ExecuteSaveActions(ID formId, ControlResult[] fields, IActionDefinition[] actions, IActionExecutor actionExecutor)
         {
-          FormID = formId,
-          SessionIDGuid = AnalyticsTracker.SessionId.Guid,
-          Actions = actions.Where(delegate(ActionDefinition s)
-          {
-            var item = StaticSettings.ContextDatabase.GetItem(s.ActionID);
-            return (item != null) && !new ActionItem(item).IsClientAction;
-          }).ToArray(),
-          Fields = GetSerializableControlResults(fields).ToArray(),
-          UserName = Sitecore.Form.Core.Configuration.Settings.RemoteActionsUserName,
-          Password = Sitecore.Form.Core.Configuration.Settings.RemoteActionsUserPassword
-        };
+            if (((Context.Site.DisplayMode != DisplayMode.Normal) && (Context.Site.DisplayMode != DisplayMode.Preview)) || (WebUtil.GetQueryString("sc_debug", null) != null)) return;
+            if (Sitecore.Form.Core.Configuration.Settings.IsRemoteActions)
+            {
+                var event3 = new WffmActionEvent
+                {
+                    FormID = formId,
+                    SessionIDGuid = DependenciesManager.AnalyticsTracker.SessionId.Guid,
 
-        EventManager.QueueEvent(event2);
+                    Actions = actions.Where(delegate (IActionDefinition s)
+                    {
+                        var item = StaticSettings.ContextDatabase.GetItem(s.ActionID);
+                        return (item != null) && !DependenciesManager.ItemRepository.CreateAction(item).IsClientAction;
+                    }).ToArray(),
 
-        var result = SubmitActionManager.ExecuteSaving(formId, fields, actions.Where(delegate(ActionDefinition s)
+                    Fields = GetSerializableControlResults(fields).ToArray(),
+                    UserName = Sitecore.Form.Core.Configuration.Settings.RemoteActionsUserName,
+                    Password = Sitecore.Form.Core.Configuration.Settings.RemoteActionsUserPassword
+                };
+
+                EventManager.QueueEvent(event3);
+
+                var result = actionExecutor.ExecuteSaving(formId, fields, actions.Where(delegate (IActionDefinition s)
+                {
+                    var item = DependenciesManager.ItemRepository.CreateAction(s.ActionID);
+                    return (item != null) && item.IsClientAction;
+                }).ToArray(), true, DependenciesManager.AnalyticsTracker.SessionId);
+
+                if (result.Failures.Length > 0)
+                    FormContext.Failures.AddRange(result.Failures);
+            }
+            else
+            {
+                var result2 = actionExecutor.ExecuteSaving(formId, fields, actions, false, DependenciesManager.AnalyticsTracker.SessionId);
+                if (result2.Failures.Length > 0)
+                    FormContext.Failures.AddRange(result2.Failures);
+            }
+        }
+
+        private static IEnumerable<ControlResult> GetSerializableControlResults(IEnumerable<ControlResult> fields)
         {
-          var item = StaticSettings.ContextDatabase.GetItem(s.ActionID);
-          return (item != null) && new ActionItem(item).IsClientAction;
-        }).ToArray(), true, AnalyticsTracker.SessionId);
+            var controlResults = fields as ControlResult[] ?? fields.ToArray();
+            Assert.ArgumentCondition(GetUploadedSizeOfAllFiles(controlResults) < PostedFilesLimit, "Posted files size", "Posted files size exceeds limit");
+            return from f in controlResults
+                   select new ControlResult
+                   {
+                       FieldID = f.FieldID,
+                       FieldName = f.FieldName,
+                       Value = GetSerializedValue(f.Value),
+                       FieldType = f.Value?.GetType().ToString() ?? typeof(object).ToString(),
+                       Parameters = f.Parameters
+                   };
+        }
 
-        if (result.Failures.Length > 0) FormContext.Failures.AddRange(result.Failures);
-      }
-      else
-      {
-        var result2 = SubmitActionManager.ExecuteSaving(formId, fields, actions, false, AnalyticsTracker.SessionId);
-        if (result2.Failures.Length > 0)FormContext.Failures.AddRange(result2.Failures);
-      }
-    }
-
-    private static IEnumerable<ControlResult> GetSerializableControlResults(IEnumerable<ControlResult> fields)
-    {
-      var controlResults = fields as ControlResult[] ?? fields.ToArray();
-      Assert.ArgumentCondition(GetUploadedSizeOfAllFiles(controlResults) < PostedFilesLimit, "Posted files size", "Posted files size exceeds limit");
-
-      return controlResults.Select(delegate(ControlResult f)
-      {
-        var result = new ControlResult
+        private static object GetSerializedValue(object value)
         {
-          FieldID = f.FieldID,
-          FieldName = f.FieldName,
-          Value = GetSerializedValue(f.Value),
-          FieldType = f.Value?.GetType().ToString() ?? typeof(object).ToString(),
-          Parameters = f.Parameters
-        };
-        return result;
-      });
-    }
+            var file = value as PostedFile;
 
-    private static object GetSerializedValue(object value)
-    {
-      var file = value as PostedFile;
+            if (file != null)
+            {
+                var file2 = new PostedFile
+                {
+                    Data = file.Data,
+                    Destination = file.Destination,
+                    FileName = file.FileName
+                };
+                value = file2;
+            }
 
-      if (file != null)
-      {
-        var file2 = new PostedFile
+            var sb = new StringBuilder();
+
+            using (TextWriter writer = new StringWriter(sb))
+            {
+                new XmlSerializer(value?.GetType() ?? typeof(object)).Serialize(writer, value);
+                value = sb.ToString();
+            }
+            return value;
+        }
+
+        private static long GetUploadedSizeOfAllFiles(IEnumerable<ControlResult> fields)
         {
-          Data = file.Data,
-          Destination = file.Destination,
-          FileName = file.FileName
-        };
-        value = file2;
-      }
+            return fields.Select(result => result.Value as PostedFile).Where(file => file?.Data != null).Aggregate(0L, (current, file) => current + file.Data.Length);
+        }
 
-      var sb = new StringBuilder();
-
-      using (TextWriter writer = new StringWriter(sb))
-      {
-        if (value != null) new XmlSerializer(value.GetType()).Serialize(writer, value);
-        value = sb.ToString();
-      }
-      return value;
-    }
-
-    private static long GetUploadedSizeOfAllFiles(IEnumerable<ControlResult> fields)
-    {
-      return fields.Select(result => result.Value as PostedFile).Where(file => file?.Data != null).Aggregate(0L, (current, file) => current + file.Data.Length);
-    }
-
-    public static void ProcessData(ID formID, ControlResult[] fields, ActionDefinition[] actions)
-    {
-      Assert.ArgumentNotNull(formID, "formID");
-      Assert.ArgumentNotNull(fields, "fields");
-      Assert.ArgumentNotNull(actions, "actions");
-      FormContext.Failures = new List<ExecuteResult.Failure>();
-
-      if (ID.IsNullOrEmpty(formID)) return;
-      SubmitActionManager.ExecuteChecking(formID, fields, actions);
-
-      try
-      {
-        ExecuteSaveActions(formID, fields, actions);
-        SubmitActionManager.ExecuteSystemAction(formID, fields);
-      }
-      catch (Exception exception)
-      {
-        Log.Warn(exception.Message, exception, new object());
-
-        var item = new ExecuteResult.Failure
+        public static void ProcessData(ID formID, ControlResult[] fields, IActionDefinition[] actions,
+          IActionExecutor actionExecutor)
         {
-          ErrorMessage = exception.Message,
-          FailedAction = ID.Null.ToString(),
-          IsCustom = false
-        };
+            Assert.ArgumentNotNull(formID, "formID");
+            Assert.ArgumentNotNull(fields, "fields");
+            Assert.ArgumentNotNull(actions, "actions");
+            FormContext.Failures = new List<ExecuteResult.Failure>();
 
-        FormContext.Failures.Add(item);
-      }
+            if (ID.IsNullOrEmpty(formID)) return;
+            actionExecutor.ExecuteChecking(formID, fields, actions);
 
-      if (FormContext.Failures.Count <= 0) return;
+            try
+            {
+                ExecuteSaveActions(formID, fields, actions, actionExecutor);
+                actionExecutor.ExecuteSystemAction(formID, fields);
+            }
+            catch (Exception exception)
+            {
+                DependenciesManager.Logger.Warn(exception.Message, exception, new object());
 
-      var args2 = new SubmittedFormFailuresArgs(formID, FormContext.Failures)
-      {
-        Database = StaticSettings.ContextDatabase.Name
-      };
-      try
-      {
-        CorePipeline.Run("errorSubmit", args2);
-      }
-      catch
-      {
-        // ignored
-      }
+                var item = new ExecuteResult.Failure
+                {
+                    ErrorMessage = exception.Message,
+                    FailedAction = ID.Null.ToString(),
+                    IsCustom = false
+                };
 
-      throw new FormSubmitException(args2.Failures);
+                FormContext.Failures.Add(item);
+            }
+
+            if (FormContext.Failures.Count <= 0) return;
+
+            var args = new SubmittedFormFailuresArgs(formID, FormContext.Failures)
+            {
+                Database = StaticSettings.ContextDatabase.Name
+            };
+
+            try
+            {
+                CorePipeline.Run("errorSubmit", args);
+            }
+            catch
+            {
+                // ignored
+            }
+            throw new FormSubmitException(args.Failures);
+        }
     }
-  }
 }
