@@ -41,31 +41,31 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="HtmlAgilityPack">
-      <HintPath>..\packages\SC.HtmlAgilityPack.8.1.3\lib\HtmlAgilityPack.dll</HintPath>
+      <HintPath>..\packages\SC.HtmlAgilityPack.8.2.0\lib\HtmlAgilityPack.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sitecore.Abstractions">
-      <HintPath>..\packages\SC.Sitecore.Abstractions.8.1.3\lib\Sitecore.Abstractions.dll</HintPath>
+      <HintPath>..\packages\SC.Sitecore.Abstractions.8.2.0\lib\Sitecore.Abstractions.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sitecore.Analytics.Model">
-      <HintPath>..\packages\SC.Sitecore.Analytics.Model.8.1.3\lib\Sitecore.Analytics.Model.dll</HintPath>
+      <HintPath>..\packages\SC.Sitecore.Analytics.Model.8.2.0\lib\Sitecore.Analytics.Model.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sitecore.Forms.Core">
-      <HintPath>..\packages\WFFM.Sitecore.Forms.Core.8.1.3\lib\Sitecore.Forms.Core.dll</HintPath>
+      <HintPath>..\packages\WFFM.Sitecore.Forms.Core.8.2.0\lib\Sitecore.Forms.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sitecore.Forms.Mvc">
-      <HintPath>..\packages\WFFM.Sitecore.Forms.Mvc.8.1.3\lib\Sitecore.Forms.Mvc.dll</HintPath>
+      <HintPath>..\packages\WFFM.Sitecore.Forms.Mvc.8.2.0\lib\Sitecore.Forms.Mvc.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sitecore.Kernel">
-      <HintPath>..\packages\SC.Sitecore.Kernel.8.1.3\lib\Sitecore.Kernel.dll</HintPath>
+      <HintPath>..\packages\SC.Sitecore.Kernel.8.2.0\lib\Sitecore.Kernel.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sitecore.WFFM.Abstractions">
-      <HintPath>..\packages\WFFM.Sitecore.WFFM.Abstractions.8.1.3\lib\Sitecore.WFFM.Abstractions.dll</HintPath>
+      <HintPath>..\packages\WFFM.Sitecore.WFFM.Abstractions.8.2.0\lib\Sitecore.WFFM.Abstractions.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
